@@ -3,6 +3,7 @@ const app = express();
 const User = require('./models/user');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const session = require('express-session');
 
 app.set('view engine','ejs');
 app.set('views','views');
@@ -21,6 +22,7 @@ db.once("open", () => {
 });
 
 app.use(express.urlencoded({extended:true}));
+app.use(session({secret:'notagoodsecret'}));
 
 app.get('/',(req,res)=>{
     res.send("This is the Home Page");
@@ -39,11 +41,11 @@ app.post('/login',async(req,res)=>{
     const user = await User.findOne({username});
     const validuser = await bcrypt.compare(password,user.password);
     if(validuser){
-        res.send('Welcome');
+        req.session.user_id = user._id;
+        res.redirect('/secret');
     }else{
-        res.send('PLease Try again');
+        res.send('/login');
     }
-    // res.send(req.body);
 })
 
 app.post('/register', async(req,res)=>{
@@ -55,6 +57,14 @@ app.post('/register', async(req,res)=>{
     })
     await user.save();
     res.redirect('/')
+})
+
+app.get('/secret',(req,res)=>{
+    if(!req.session.user_id){
+        res.redirect('/login');
+    }else{
+        res.send('You are in secret Page');
+    }
 })
 
 app.listen(3000,()=>{
