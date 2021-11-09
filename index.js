@@ -15,6 +15,15 @@ mongoose.connect('mongodb://localhost:27017/Auth-app', {
     // useFindAndModify: false
 });
 
+// Demo use id & password are {usename : abc , password:abc}
+
+const requireLogin = (req,res,next)=>{
+    if(!req.session.user_id){
+        return res.redirect('/login');
+    }
+    next();
+}
+
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
 db.once("open", () => {
@@ -59,12 +68,18 @@ app.post('/register', async(req,res)=>{
     res.redirect('/')
 })
 
-app.get('/secret',(req,res)=>{
-    if(!req.session.user_id){
-        res.redirect('/login');
-    }else{
-        res.send('You are in secret Page');
-    }
+app.get('/secret',requireLogin,(req,res)=>{
+    res.render('secret');
+})
+
+app.get('/topsecret',requireLogin,(req,res)=>{
+    res.send('Top Secret');
+})
+
+app.post('/logout',(req,res)=>{
+    req.session.user_id = null;
+    // req.session.destroy(); // this is destory entire session. for now above line will also work.
+    res.redirect('/login');
 })
 
 app.listen(3000,()=>{
